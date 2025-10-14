@@ -7,7 +7,7 @@
 <div class="container py-4">
 
   {{-- Header artis --}}
-  <div class="row align-items-center mb-5">
+  <div class="row align-items-center mb-4">
     <div class="col-auto">
       @if(!empty($artist->image_url))
         <img src="{{ $artist->image_url }}" alt="{{ $artist->name }}" class="rounded" style="width:120px;height:120px;object-fit:cover;">
@@ -40,6 +40,102 @@
       @endif
     </div>
   </div>
+
+  {{-- Artist Bio Section --}}
+  @if(!empty($artist->born_date) || !empty($artist->born_in) || !empty($artist->gender) || !empty($artist->country))
+  <section class="mb-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-person-badge"></i> Artist Information
+        </h5>
+        <div class="row g-3">
+          @if(!empty($bornFormatted))
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-calendar-event text-primary me-2 fs-5"></i>
+              <div>
+                <small class="text-muted d-block">Born</small>
+                <strong>{{ $bornFormatted }}</strong>
+              </div>
+            </div>
+          </div>
+          @endif
+
+          @if(!empty($artist->born_in))
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-geo-alt text-danger me-2 fs-5"></i>
+              <div>
+                <small class="text-muted d-block">Birth Place</small>
+                <strong>{{ $artist->born_in }}</strong>
+              </div>
+            </div>
+          </div>
+          @endif
+
+          @if(!empty($artist->gender))
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-gender-ambiguous text-info me-2 fs-5"></i>
+              <div>
+                <small class="text-muted d-block">Gender</small>
+                <strong>{{ ucfirst($artist->gender) }}</strong>
+              </div>
+            </div>
+          </div>
+          @endif
+
+          @if(!empty($artist->country))
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-flag text-success me-2 fs-5"></i>
+              <div>
+                <small class="text-muted d-block">Country</small>
+                <strong>{{ strtoupper($artist->country) }}</strong>
+              </div>
+            </div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </section>
+  @endif
+
+  {{-- Social Media Links --}}
+  @if(!empty($socialLinks))
+  <section class="mb-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-share"></i> Social Media & Platforms
+        </h5>
+        <div class="d-flex flex-wrap gap-2">
+          @foreach($socialLinks as $link)
+            <a href="{{ $link['url'] }}" target="_blank" rel="noopener" class="btn btn-outline-{{ $link['color'] }} btn-sm">
+              <i class="bi {{ $link['icon'] }}"></i> {{ $link['name'] }}
+            </a>
+          @endforeach
+        </div>
+      </div>
+    </div>
+  </section>
+  @endif
+
+  {{-- Description Section --}}
+  @if(!empty($artist->description))
+  <section class="mb-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-info-circle"></i> About
+        </h5>
+        <p class="mb-0" style="line-height: 1.7;">{{ $artist->description }}</p>
+      </div>
+    </div>
+  </section>
+  @endif
 
   {{-- Similar Artists Section --}}
   @if(!empty($similar))
@@ -87,53 +183,51 @@
   </section>
   @endif
 
-
-{{-- Setelah Similar Artists, sebelum Albums --}}
-@if(!empty($topTracks) && $topTracks->count())
-<section class="mb-5">
-  <h2 class="h4 mb-3">Top Tracks</h2>
-  <div class="list-group">
-    @foreach($topTracks as $track)
-      <div class="list-group-item list-group-item-action">
-        <div class="d-flex align-items-center">
-          <div class="me-3 text-muted fw-bold" style="min-width:30px;">
-            #{{ $track->rank }}
-          </div>
-          @if($track->album_image_url)
-            <img src="{{ $track->album_image_url }}" class="me-3 rounded" style="width:56px;height:56px;object-fit:cover;" alt="{{ $track->title }}">
-          @endif
-          <div class="flex-grow-1">
-            <div class="fw-semibold">{{ $track->title }}</div>
-            <small class="text-muted">
-              {{ $track->album_name }}
-              @if($track->duration_ms)
-                • {{ gmdate('i:s', $track->duration_ms / 1000) }}
-              @endif
-              @if($track->release_date)
-                • {{ substr($track->release_date, 0, 4) }}
-              @endif
-            </small>
-          </div>
-          <div class="text-end me-3">
-            <div class="badge bg-warning text-dark">
-              <i class="bi bi-star-fill"></i> {{ $track->popularity }}
+  {{-- Top Tracks Section --}}
+  @if(!empty($topTracks) && $topTracks->count())
+  <section class="mb-5">
+    <h2 class="h4 mb-3">Top Tracks</h2>
+    <div class="list-group">
+      @foreach($topTracks as $track)
+        <div class="list-group-item list-group-item-action">
+          <div class="d-flex align-items-center">
+            <div class="me-3 text-muted fw-bold" style="min-width:30px;">
+              #{{ $track->rank }}
             </div>
-            @if($track->explicit)
-              <span class="badge bg-secondary">E</span>
+            @if($track->album_image_url)
+              <img src="{{ $track->album_image_url }}" class="me-3 rounded" style="width:56px;height:56px;object-fit:cover;" alt="{{ $track->title }}">
+            @endif
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ $track->title }}</div>
+              <small class="text-muted">
+                {{ $track->album_name }}
+                @if($track->duration_ms)
+                  • {{ gmdate('i:s', $track->duration_ms / 1000) }}
+                @endif
+                @if($track->release_date)
+                  • {{ substr($track->release_date, 0, 4) }}
+                @endif
+              </small>
+            </div>
+            <div class="text-end me-3">
+              <div class="badge bg-warning text-dark">
+                <i class="bi bi-star-fill"></i> {{ $track->popularity }}
+              </div>
+              @if($track->explicit)
+                <span class="badge bg-secondary">E</span>
+              @endif
+            </div>
+            @if($track->spotify_url)
+              <a href="{{ $track->spotify_url }}" target="_blank" class="btn btn-sm btn-success" rel="noopener">
+                <i class="bi bi-play-fill"></i>
+              </a>
             @endif
           </div>
-          @if($track->spotify_url)
-            <a href="{{ $track->spotify_url }}" target="_blank" class="btn btn-sm btn-success" rel="noopener">
-              <i class="bi bi-play-fill"></i>
-            </a>
-          @endif
         </div>
-      </div>
-    @endforeach
-  </div>
-</section>
-@endif
-
+      @endforeach
+    </div>
+  </section>
+  @endif
 
   {{-- Albums Section --}}
   <section>
@@ -182,7 +276,12 @@
         @endforeach
       </div>
 
-    
+      {{-- Pagination --}}
+      @if(method_exists($albums, 'links'))
+        <div class="mt-4">
+          {{ $albums->links() }}
+        </div>
+      @endif
     @else
       <div class="alert alert-info">
         <i class="bi bi-info-circle"></i> Belum ada album tersedia untuk artis ini.

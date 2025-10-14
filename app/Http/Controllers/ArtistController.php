@@ -6,12 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class ArtistController extends Controller
 {
     public function show(string $slug, string $spotifyId)
     {
-        // Ambil artis
+        // Ambil artis dengan semua field termasuk social & bio
         $artist = DB::table('artists')
             ->where('spotify_id', $spotifyId)
             ->first();
@@ -27,8 +28,24 @@ class ArtistController extends Controller
             ], 301);
         }
 
-        // Ambil albums: jika pivot album_artist tersedia, gunakan join; jika tidak, fallback berdasarkan albums yang menaut pada artist melalui pivot opsional
-        $hasPivot = \Illuminate\Support\Facades\Schema::hasTable('album_artist');
+        // Format born date dengan age
+        $bornFormatted = null;
+        $age = null;
+        if (!empty($artist->born_date)) {
+            try {
+                $date = Carbon::parse($artist->born_date);
+                $age = $date->age;
+                $bornFormatted = $date->format('F j, Y') . ' (' . $age . ' years old)';
+            } catch (\Exception $e) {
+                // Ignore parsing errors
+            }
+        }
+
+        // Collect social media links
+        $socialLinks = $this->getSocialLinks($artist);
+
+        // Ambil albums
+        $hasPivot = Schema::hasTable('album_artist');
 
         if ($hasPivot) {
             $albums = DB::table('albums')
@@ -47,10 +64,8 @@ class ArtistController extends Controller
                 ])
                 ->orderByDesc('albums.release_date')
                 ->orderBy('albums.name')
-                ->paginate(24);
+                ->paginate(100);
         } else {
-            // Fallback: jika pivot belum ada, bisa didefinisikan strategi lain (misal simpan album_id di songs dan derive dari sana).
-            // Untuk sementara tampilkan kosong atau informasikan belum tersedia.
             $albums = collect([]);
         }
 
@@ -71,7 +86,7 @@ class ArtistController extends Controller
                     'similar.spotify_url'
                 )
                 ->orderByDesc('similar.popularity')
-                ->limit(18) // 3 baris x 6 kolom
+                // ->limit(18)
                 ->get()
                 ->map(function ($a) {
                     $genres = is_string($a->genres) ? json_decode($a->genres, true) : ($a->genres ?? []);
@@ -90,16 +105,15 @@ class ArtistController extends Controller
                 ->all();
         }
 
-
         $topTracks = [];
         if (Schema::hasTable('artist_top_tracks')) {
             $topTracks = DB::table('songs')
                 ->join('artist_top_tracks', 'artist_top_tracks.song_id', '=', 'songs.id')
                 ->where('artist_top_tracks.artist_id', $artist->id)
-                ->where('artist_top_tracks.market', 'US') // atau dynamic berdasarkan user locale
+                ->where('artist_top_tracks.market', 'US')
                 ->select('songs.*', 'artist_top_tracks.rank')
                 ->orderBy('artist_top_tracks.rank')
-                ->limit(10)
+                // ->limit(10)
                 ->get();
         }
 
@@ -108,6 +122,40 @@ class ArtistController extends Controller
             'albums' => $albums,
             'similar' => $similar,
             'topTracks' => $topTracks,
+            'socialLinks' => $socialLinks,
+            'bornFormatted' => $bornFormatted,
+            'age' => $age,
         ]);
+    }
+
+    private function getSocialLinks($artist): array
+    {
+        $links = [];
+
+        $platforms = [
+            'facebook' => ['icon' => 'bi-facebook', 'name' => 'Facebook', 'color' => 'primary'],
+            'twitter' => ['icon' => 'bi-twitter-x', 'name' => 'Twitter', 'color' => 'dark'],
+            'instagram' => ['icon' => 'bi-instagram', 'name' => 'Instagram', 'color' => 'danger'],
+            'youtube' => ['icon' => 'bi-youtube', 'name' => 'YouTube', 'color' => 'danger'],
+            'soundcloud' => ['icon' => 'bi-cloud', 'name' => 'SoundCloud', 'color' => 'warning'],
+            'tiktok' => ['icon' => 'bi-tiktok', 'name' => 'TikTok', 'color' => 'dark'],
+            'bandcamp' => ['icon' => 'bi-music-note-beamed', 'name' => 'Bandcamp', 'color' => 'info'],
+            'myspace' => ['icon' => 'bi-at', 'name' => 'MySpace', 'color' => 'secondary'],
+            'discogs' => ['icon' => 'bi-vinyl', 'name' => 'Discogs', 'color' => 'secondary'],
+        ];
+
+        foreach ($platforms as $platform => $meta) {
+            $urlField = $platform . '_url';
+            if (!empty($artist->{$urlField})) {
+                $links[] = [
+                    'url' => $artist->{$urlField},
+                    'icon' => $meta['icon'],
+                    'name' => $meta['name'],
+                    'color' => $meta['color'],
+                ];
+            }
+        }
+
+        return $links;
     }
 }
