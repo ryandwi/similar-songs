@@ -42,7 +42,7 @@ return new class extends Migration
             
             // Computed fields
             $table->string('key_signature', 10)->nullable(); // e.g., "C# Major"
-            // $table->unsignedSmallInteger('bpm')->storedAs('ROUND(tempo)'); // Virtual column for easier queries
+            $table->unsignedSmallInteger('bpm')->storedAs('ROUND(tempo)'); // Virtual column for easier queries
             
             // Metadata
             $table->boolean('explicit')->default(false);
