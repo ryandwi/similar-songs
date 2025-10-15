@@ -117,6 +117,8 @@ class ArtistController extends Controller
                 ->get();
         }
 
+        $seoText = $this->generateSeoText($artist->name, $similar);
+
         return view('artist.show', [
             'artist' => $artist,
             'albums' => $albums,
@@ -124,6 +126,7 @@ class ArtistController extends Controller
             'topTracks' => $topTracks,
             'socialLinks' => $socialLinks,
             'bornFormatted' => $bornFormatted,
+            'seoText' => $seoText,
             'age' => $age,
         ]);
     }
@@ -157,5 +160,20 @@ class ArtistController extends Controller
         }
 
         return $links;
+    }
+
+
+    private function generateSeoText(string $artistName, array $similar): string
+    {
+        $namesList = collect($similar)->pluck('name')->take(5)->toArray();
+
+        if (count($namesList) > 1) {
+            $last = array_pop($namesList);
+            $names = implode(', ', $namesList) . ' and ' . $last;
+        } else {
+            $names = $namesList[0] ?? '';
+        }
+
+        return "Based on shared genres, audio features, and fan overlap, here are the top 20 artists like {$artistName}. Discover singers such as {$names}—each offering a sound and style {$artistName} fans will love.";
     }
 }

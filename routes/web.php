@@ -8,5 +8,5 @@ Route::get('/', function () {
 });
 
 
-Route::get('/artist/{slug}/{spotifyId}', [ArtistController::class, 'show'])
+Route::get('/similar-artists/{slug}/{spotifyId}', [ArtistController::class, 'show'])
      ->name('artist.show');
