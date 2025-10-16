@@ -8,5 +8,7 @@ Route::get('/', function () {
 });
 
 
-Route::get('/similar-artists/{slug}/{spotifyId}', [ArtistController::class, 'show'])
-     ->name('artist.show');
+Route::prefix('similar-artists')->name('artist.')->group(function () {
+    Route::get('/', [ArtistController::class, 'index'])->name('index');
+    Route::get('/{slug}/{spotifyId}', [ArtistController::class, 'show'])->name('show');
+});
